@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, Plus, Trash2, Save, Eye } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -12,6 +12,27 @@ function getTashkentDate() {
     timeZone: 'Asia/Tashkent'
   }).format(now);
   return tashkentDate;
+}
+
+// LocalStorage helpers
+const STORAGE_KEY = 'conversation-collector-data';
+
+function saveToLocalStorage(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.error('Failed to save data to localStorage:', error);
+  }
+}
+
+function loadFromLocalStorage() {
+  try {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    return savedData ? JSON.parse(savedData) : [];
+  } catch (error) {
+    console.error('Failed to load data from localStorage:', error);
+    return [];
+  }
 }
 
 const ConversationDataCollector = () => {
@@ -47,10 +68,15 @@ const subcategories = [
 
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [currentConversation, setCurrentConversation] = useState([]);
-  const [allData, setAllData] = useState([]);
+  const [allData, setAllData] = useState(() => loadFromLocalStorage());
   const [currentQA, setCurrentQA] = useState({ question: '', answer: '' });
   const [collectionDate, setCollectionDate] = useState(getTashkentDate());
   const [showData, setShowData] = useState(false);
+
+  // Auto-save to localStorage whenever allData changes
+  useEffect(() => {
+    saveToLocalStorage(allData);
+  }, [allData]);
 
   // Get conversation statistics
   const getConversationStats = () => {
@@ -162,6 +188,8 @@ const subcategories = [
       setAllData([]);
       setCurrentConversation([]);
       setSelectedSubcategory('');
+      // Clear localStorage as well
+      localStorage.removeItem(STORAGE_KEY);
     }
   };
 
